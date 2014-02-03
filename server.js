@@ -24,13 +24,26 @@ app.configure(function() {
 	app.use(express.static(__dirname + '/public'));
 });
 
-mongoose.connect('mongodb://localhost/multivision');
+
+if (env === 'development') {
+	mongoose.connect('mongodb://localhost/multivision/');	
+} else {
+	//else prod env
+	mongoose.connect('mongodb://localhost/multivision/');
+}
+
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'DB Connection Error'));
 db.once('open', function callback(){
 	console.log('DB Opened');
 });
 
+var messageSchema = mongoose.Schema({message: String});
+var Message = mongoose.model('Message', messageSchema);
+var mongoMessage;
+Message.findOne().exec(function (err, messageDoc){
+	mongoMessage = messageDoc.message;
+});
 
 app.get('/partials/:partialPath', function(req, res){
 	res.render('partials/' + req.params.partialPath);
@@ -38,9 +51,9 @@ app.get('/partials/:partialPath', function(req, res){
 
 //all requests handled by this
 app.get('*', function(req, res){
-	res.render('index');
+	res.render('index', {mongoMessage: mongoMessage});
 });
 
-var port = 3030;
+var port = process.env.PORT || 3030;
 app.listen(port);
 console.log('Listening to port ' + port);
